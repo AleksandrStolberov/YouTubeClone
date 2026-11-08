@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import uuid
 from dataclasses import dataclass
 from pathlib import PurePosixPath
@@ -37,6 +38,7 @@ _THUMBNAIL_EXTENSIONS = {
     ".webp": "image/webp",
 }
 _STAFF_ROLES = {UserRole.MODERATOR.value, UserRole.ADMIN.value}
+_BYTE_RANGE = re.compile(r"^bytes=(\d*)-(\d*)$")
 
 
 def public_video_filters():
@@ -54,6 +56,14 @@ class VideoNotFoundError(Exception):
 
 class VideoForbiddenError(Exception):
     """Raised when the caller cannot view or delete the video."""
+
+
+class ByteRangeError(Exception):
+    """Raised when a Range header cannot be satisfied."""
+
+    def __init__(self, size: int) -> None:
+        self.size = size
+        super().__init__("Invalid byte range")
 
 
 class VideoValidationError(Exception):
@@ -183,6 +193,61 @@ async def list_public_videos(
 class StoredObject:
     data: bytes
     media_type: str
+
+
+def parse_byte_range(header: str | None, size: int) -> tuple[int, int]:
+    """Return an inclusive byte range. A missing header selects the whole object."""
+    if size <= 0:
+        return 0, -1
+    if header is None or not header.strip():
+        return 0, size - 1
+    match = _BYTE_RANGE.match(header.strip())
+    if match is None:
+        raise ByteRangeError(size)
+    start_text, end_text = match.group(1), match.group(2)
+    if start_text == "" and end_text == "":
+        raise ByteRangeError(size)
+    if start_text == "":
+        suffix = int(end_text)
+        if suffix <= 0:
+            raise ByteRangeError(size)
+        start = max(size - suffix, 0)
+        end = size - 1
+    else:
+        start = int(start_text)
+        end = size - 1 if end_text == "" else int(end_text)
+    if start < 0 or start >= size or end < start:
+        raise ByteRangeError(size)
+    return start, min(end, size - 1)
+
+
+@dataclass(frozen=True)
+class VideoFile:
+    bucket: str
+    key: str
+    size: int
+    media_type: str
+
+
+async def describe_video_file(
+    session: AsyncSession,
+    storage: S3Storage,
+    video_id: uuid.UUID,
+    viewer: User | None,
+) -> VideoFile:
+    """Return the stored video object when the viewer may open it."""
+    video = await get_video(session, video_id, viewer)
+    size, media_type = await asyncio.to_thread(
+        storage.stat_object,
+        storage.video_bucket,
+        video.s3_key,
+    )
+    return VideoFile(
+        bucket=storage.video_bucket,
+        key=video.s3_key,
+        size=size,
+        media_type=media_type,
+    )
 
 
 async def load_thumbnail(

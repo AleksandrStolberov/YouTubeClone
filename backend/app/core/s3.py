@@ -121,6 +121,30 @@ class S3Storage:
         )
         return str(url)
 
+    def stat_object(self, bucket: str, key: str) -> tuple[int, str]:
+        """Return the object size and content type."""
+        stat = self._run(self.client.stat_object, bucket, key)
+        return int(stat.size), _media_type(str(stat.content_type or ""), key)
+
+    def read_object_range(self, bucket: str, key: str, offset: int, length: int) -> bytes:
+        """Read ``length`` bytes starting at ``offset``."""
+        response = self._run(
+            self.client.get_object,
+            bucket,
+            key,
+            offset=offset,
+            length=length,
+        )
+        try:
+            try:
+                return response.read()
+            except (MinioException, HTTPError, OSError, TimeoutError) as exc:
+                logger.exception("MinIO request failed")
+                raise StorageError("Object storage request failed") from exc
+        finally:
+            response.close()
+            response.release_conn()
+
     def read_object(self, bucket: str, key: str) -> tuple[bytes, str]:
         """Read an object and return its bytes plus a content type."""
         response = self._run(self.client.get_object, bucket, key)

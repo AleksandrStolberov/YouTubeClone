@@ -1,8 +1,11 @@
 import { bindAuth } from "./js/auth.js";
 import { bindFeed } from "./js/feed.js";
+import { bindRouter } from "./js/router.js";
+import { bindWatch } from "./js/watch.js";
 
 bindFeed();
 bindAuth();
+bindRouter(bindWatch());
 
 const menuButton = document.querySelector("#menu-button");
 menuButton.addEventListener("click", () => {

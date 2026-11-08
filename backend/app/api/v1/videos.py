@@ -1,8 +1,9 @@
+import asyncio
 import os
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import Response
 from pydantic import ValidationError
@@ -14,15 +15,18 @@ from app.core.s3 import S3Storage, StorageError, get_s3_client
 from app.models import User, Video
 from app.schemas.video import VideoCreate, VideoRead
 from app.services.video import (
+    ByteRangeError,
     IncomingFile,
     VideoForbiddenError,
     VideoNotFoundError,
     VideoValidationError,
     create_video,
     delete_video,
+    describe_video_file,
     get_video,
     list_public_videos,
     load_thumbnail,
+    parse_byte_range,
 )
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -133,6 +137,69 @@ async def read_video_thumbnail(
         media_type=cover.media_type,
         headers={"Cache-Control": "public, max-age=3600"},
     )
+
+
+@router.get("/{video_id}/stream")
+async def stream_video(
+    video_id: uuid.UUID,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    storage: Annotated[S3Storage, Depends(get_s3_client)],
+    viewer: Annotated[User | None, Depends(get_optional_user)],
+) -> Response:
+    """Stream the video file, honoring a single HTTP Range request."""
+    try:
+        stored = await describe_video_file(session, storage, video_id, viewer)
+    except VideoNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found") from exc
+    except VideoForbiddenError as exc:
+        if viewer is None:
+            raise unauthorized() from exc
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        ) from exc
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Object storage is unavailable",
+        ) from exc
+
+    try:
+        start, end = parse_byte_range(request.headers.get("range"), stored.size)
+    except ByteRangeError as exc:
+        return Response(
+            status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Range": f"bytes */{exc.size}",
+            },
+        )
+
+    headers = {"Accept-Ranges": "bytes", "Content-Length": "0"}
+    if end < start:
+        return Response(status_code=status.HTTP_200_OK, media_type=stored.media_type, headers=headers)
+
+    try:
+        payload = await asyncio.to_thread(
+            storage.read_object_range,
+            stored.bucket,
+            stored.key,
+            start,
+            end - start + 1,
+        )
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Object storage is unavailable",
+        ) from exc
+
+    headers["Content-Length"] = str(len(payload))
+    status_code = status.HTTP_200_OK
+    if request.headers.get("range"):
+        status_code = status.HTTP_206_PARTIAL_CONTENT
+        headers["Content-Range"] = f"bytes {start}-{start + len(payload) - 1}/{stored.size}"
+    return Response(content=payload, status_code=status_code, media_type=stored.media_type, headers=headers)
 
 
 @router.get("/{video_id}", response_model=VideoRead)

@@ -35,6 +35,15 @@ function setStatus(text) {
   node.textContent = text || "";
 }
 
+function publish(user) {
+  paintAccount(user);
+  document.dispatchEvent(new CustomEvent("auth:changed", { detail: user }));
+}
+
+export function currentUser() {
+  return readUser();
+}
+
 function paintAccount(user) {
   const name = document.querySelector("#account-name");
   const role = document.querySelector("#account-role");
@@ -74,11 +83,11 @@ async function signIn(account) {
     localStorage.setItem(REFRESH_KEY, tokens.refresh_token);
     const me = await request("/auth/me");
     localStorage.setItem(USER_KEY, JSON.stringify(me));
-    paintAccount(me);
+    publish(me);
     setStatus("");
   } catch (error) {
     clearSession();
-    paintAccount(null);
+    publish(null);
     const known = !error.status
       ? "Сервер недоступен"
       : error.status === 401
@@ -92,7 +101,7 @@ async function signIn(account) {
 
 function signOut() {
   clearSession();
-  paintAccount(null);
+  publish(null);
   setStatus("");
 }
 
@@ -130,10 +139,10 @@ async function restoreSession() {
   try {
     const me = await request("/auth/me");
     localStorage.setItem(USER_KEY, JSON.stringify(me));
-    paintAccount(me);
+    publish(me);
   } catch {
     clearSession();
-    paintAccount(null);
+    publish(null);
     setStatus("Сессия истекла. Войдите снова.");
   }
 }

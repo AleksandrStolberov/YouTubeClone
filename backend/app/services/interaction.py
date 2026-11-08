@@ -197,6 +197,31 @@ async def toggle_subscription(
     )
 
 
+async def subscription_state(
+    session: AsyncSession,
+    channel_id: uuid.UUID,
+    viewer: User | None,
+) -> SubscriptionStatus:
+    """Return whether the viewer follows the channel, plus the subscriber total."""
+    channel = await session.get(User, channel_id)
+    if channel is None:
+        raise ChannelNotFoundError
+    is_subscribed = False
+    if viewer is not None and viewer.id != channel_id:
+        existing = await session.scalar(
+            select(Subscription.id).where(
+                Subscription.channel_id == channel_id,
+                Subscription.subscriber_id == viewer.id,
+            )
+        )
+        is_subscribed = existing is not None
+    return SubscriptionStatus(
+        channel_id=channel_id,
+        is_subscribed=is_subscribed,
+        subscribers_count=await _count_subscribers(session, channel_id),
+    )
+
+
 async def get_subscribers_count(
     session: AsyncSession,
     channel_id: uuid.UUID,
