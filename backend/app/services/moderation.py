@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User, UserRole, Video, VideoReport
@@ -12,6 +12,10 @@ _STAFF_ROLES = {UserRole.MODERATOR.value, UserRole.ADMIN.value}
 
 class ModerationForbiddenError(Exception):
     """Raised when the caller is not a moderator or an admin."""
+
+
+class ReportNotFoundError(Exception):
+    """Raised when a complaint id does not exist."""
 
 
 def _role_name(user: User) -> str:
@@ -88,9 +92,31 @@ async def ban_video(
         raise VideoNotFoundError
     video.is_banned = True
     video.ban_reason = reason
+    await session.execute(
+        update(VideoReport)
+        .where(VideoReport.video_id == video.id, VideoReport.status == "pending")
+        .values(status="resolved")
+    )
     await session.commit()
     await session.refresh(video)
     return video
+
+
+async def reject_report(
+    session: AsyncSession,
+    report_id: uuid.UUID,
+    actor: User,
+) -> ReportRead:
+    """Dismiss a complaint without hiding the video."""
+    _ensure_staff(actor)
+    report = await session.get(VideoReport, report_id)
+    if report is None:
+        raise ReportNotFoundError
+    report.status = "rejected"
+    video = await session.get(Video, report.video_id)
+    await session.commit()
+    await session.refresh(report)
+    return _report_read(report, video.ban_reason if video is not None else None)
 
 
 async def unban_video(

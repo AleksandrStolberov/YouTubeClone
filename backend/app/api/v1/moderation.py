@@ -11,9 +11,11 @@ from app.schemas.moderation import ReportCreate, ReportRead, VideoBanRequest
 from app.schemas.video import VideoRead
 from app.services.moderation import (
     ModerationForbiddenError,
+    ReportNotFoundError,
     ban_video,
     create_report,
     list_reports,
+    reject_report,
     unban_video,
 )
 from app.services.video import VideoForbiddenError, VideoNotFoundError
@@ -62,6 +64,24 @@ async def read_reports(
     """List complaints. Allowed for moderators and admins, newest first."""
     try:
         return await list_reports(session, current_user, status=report_status)
+    except ModerationForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        ) from exc
+
+
+@router.post("/moderation/reports/{report_id}/reject", response_model=ReportRead)
+async def dismiss_report(
+    report_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ReportRead:
+    """Mark a complaint as rejected. The video stays visible."""
+    try:
+        return await reject_report(session, report_id, current_user)
+    except ReportNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found") from exc
     except ModerationForbiddenError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

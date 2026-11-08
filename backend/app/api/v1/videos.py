@@ -32,9 +32,21 @@ from app.services.video import (
 router = APIRouter(prefix="/videos", tags=["videos"])
 
 
-def _parse_video_form(title: str, description: str | None, is_private: bool) -> VideoCreate:
+def _parse_video_form(
+    title: str,
+    description: str | None,
+    is_private: bool,
+    category: str | None,
+    tags: str | None,
+) -> VideoCreate:
     try:
-        return VideoCreate(title=title, description=description, is_private=is_private)
+        return VideoCreate(
+            title=title,
+            description=description,
+            is_private=is_private,
+            category=category,
+            tags=tags or [],
+        )
     except ValidationError as exc:
         raise RequestValidationError(exc.errors()) from exc
 
@@ -72,13 +84,15 @@ async def upload_video(
     storage: Annotated[S3Storage, Depends(get_s3_client)],
     description: Annotated[str | None, Form()] = None,
     is_private: Annotated[bool, Form()] = False,
+    category: Annotated[str | None, Form()] = None,
+    tags: Annotated[str | None, Form()] = None,
     thumbnail: Annotated[
         UploadFile | None,
         File(description="Optional cover image (jpeg, png, or webp)"),
     ] = None,
 ) -> Video:
     """Store a video in MinIO and its metadata in PostgreSQL."""
-    payload = _parse_video_form(title, description, is_private)
+    payload = _parse_video_form(title, description, is_private, category, tags)
     cover = _incoming_file(thumbnail) if _thumbnail_provided(thumbnail) else None
     try:
         return await create_video(

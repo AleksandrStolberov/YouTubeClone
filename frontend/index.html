@@ -35,6 +35,9 @@
     </form>
 
     <div class="header-end">
+      <a class="header-link" id="moderation-link" href="#/moderation" hidden>Модерация</a>
+      <button class="create-button" id="create-button" type="button">+ Создать</button>
+      <button class="text-button" id="login-button" type="button">Войти</button>
       <div class="demo-users" id="demo-users" role="group" aria-label="Демо-пользователи"></div>
       <div class="account" id="account-badge">
         <span class="avatar" id="account-avatar" aria-hidden="true">Г</span>
@@ -55,12 +58,12 @@
       </a>
     </aside>
     <main class="content">
-      <div id="home">
+      <div id="home" class="screen">
         <nav class="chips" id="chips" aria-label="Категории"></nav>
         <p class="feed-status" id="feed-status" role="status">Загрузка ленты…</p>
         <section class="video-grid" id="video-grid" aria-live="polite" aria-label="Лента видео"></section>
       </div>
-      <section id="watch" class="watch" hidden>
+      <section id="watch" class="watch screen" hidden>
         <div class="watch-layout">
           <div class="watch-primary">
             <div class="player">
@@ -85,9 +88,11 @@
               </button>
             </div>
             <div class="channel-row">
-              <span class="avatar" id="channel-avatar" aria-hidden="true"></span>
+              <a class="avatar-link" id="channel-link" href="#/">
+                <span class="avatar" id="channel-avatar" aria-hidden="true"></span>
+              </a>
               <div class="channel-meta">
-                <strong id="channel-name"></strong>
+                <a id="channel-name" class="channel-name" href="#/"></a>
                 <p id="channel-subs"></p>
               </div>
               <button id="subscribe-button" class="subscribe" type="button" hidden>Подписаться</button>
@@ -107,6 +112,33 @@
         </div>
         <p id="watch-status" class="watch-status" role="status"></p>
       </section>
+      <section id="channel" class="screen" hidden>
+        <header class="channel-banner">
+          <span class="avatar" id="channel-page-avatar" aria-hidden="true"></span>
+          <div>
+            <h1 id="channel-page-name"></h1>
+            <p id="channel-page-stats"></p>
+          </div>
+          <button id="channel-subscribe" class="subscribe" type="button" hidden>Подписаться</button>
+        </header>
+        <div class="tabs" role="tablist">
+          <button id="channel-tab-videos" class="chip is-active" type="button">Видео</button>
+          <button id="channel-tab-playlists" class="chip" type="button">Плейлисты</button>
+        </div>
+        <p id="channel-status" class="feed-status" role="status"></p>
+        <section id="channel-videos" class="video-grid" aria-label="Видео канала"></section>
+        <section id="channel-playlists" hidden></section>
+      </section>
+      <section id="moderation" class="screen" hidden>
+        <h1 class="page-title">Жалобы</h1>
+        <p id="moderation-status" class="feed-status" role="status"></p>
+        <div id="report-list"></div>
+      </section>
+      <section id="search" class="screen" hidden>
+        <h1 id="search-heading" class="page-title">Поиск</h1>
+        <p id="search-status" class="feed-status" role="status"></p>
+        <div id="search-results"></div>
+      </section>
     </main>
     <dialog id="report-dialog">
       <form id="report-form">
@@ -123,6 +155,79 @@
         <div class="dialog-actions">
           <button id="report-cancel" type="button">Отмена</button>
           <button type="submit">Отправить</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="upload-dialog">
+      <h2>Загрузка видео</h2>
+      <p id="upload-guest" hidden>Загрузка доступна после входа.
+        <button id="upload-signin" type="button">Войти</button>
+      </p>
+      <form id="upload-form" class="stack-form">
+        <label class="field">Видео
+          <input id="upload-video" name="video" type="file" accept=".mp4,.webm,video/mp4,video/webm" required>
+        </label>
+        <label class="field">Обложка
+          <input id="upload-cover" name="thumbnail" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+        </label>
+        <label class="field">Заголовок
+          <input id="upload-title" name="title" type="text" maxlength="200" required>
+        </label>
+        <label class="field">Описание
+          <textarea id="upload-description" name="description" rows="3" maxlength="5000"></textarea>
+        </label>
+        <label class="field">Категория
+          <select id="upload-category" name="category">
+            <option value="Tech">Tech</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Music">Music</option>
+            <option value="Education">Education</option>
+          </select>
+        </label>
+        <label class="field">Теги через запятую
+          <input id="upload-tags" name="tags" type="text" placeholder="fastapi, python">
+        </label>
+        <label class="check"><input id="upload-private" type="checkbox"> Приватное видео</label>
+        <div id="upload-progress" class="progress" hidden>
+          <div id="upload-bar"></div>
+        </div>
+        <p id="upload-percent" class="feed-status"></p>
+        <p id="upload-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button id="upload-cancel" type="button">Отмена</button>
+          <button id="upload-submit" type="submit">Загрузить</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="auth-dialog">
+      <form id="login-form" class="stack-form">
+        <h2>Войти</h2>
+        <label class="field">Имя пользователя
+          <input id="login-username" type="text" autocomplete="username" required>
+        </label>
+        <label class="field">Пароль
+          <input id="login-password" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="login-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button id="login-cancel" type="button">Отмена</button>
+          <button type="submit">Войти</button>
+        </div>
+      </form>
+      <form id="register-form" class="stack-form">
+        <h2>Регистрация</h2>
+        <label class="field">Email
+          <input id="register-email" type="email" autocomplete="email" required>
+        </label>
+        <label class="field">Имя пользователя
+          <input id="register-username" type="text" minlength="3" maxlength="50" autocomplete="username" required>
+        </label>
+        <label class="field">Пароль
+          <input id="register-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+        </label>
+        <p id="register-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button type="submit">Зарегистрироваться</button>
         </div>
       </form>
     </dialog>

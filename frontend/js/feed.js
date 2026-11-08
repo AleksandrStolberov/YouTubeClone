@@ -65,23 +65,18 @@ function thumbnailPlaceholder(category) {
   return node;
 }
 
-function renderCard(video, author) {
+export function renderVideoCard(video, author) {
   const card = document.createElement("article");
   card.className = "card";
   if (video.id === selectedVideoId()) {
     card.classList.add("is-selected");
   }
 
-  const link = document.createElement("a");
-  link.className = "card-link";
-  link.href = `#/watch/${video.id}`;
-  link.dataset.videoId = video.id;
-  link.addEventListener("click", () => {
+  const media = document.createElement("a");
+  media.className = "card-link";
+  media.href = `#/watch/${video.id}`;
+  media.addEventListener("click", () => {
     rememberVideo(video.id);
-    document.querySelectorAll(".card.is-selected").forEach((node) => {
-      node.classList.remove("is-selected");
-    });
-    card.classList.add("is-selected");
   });
 
   const thumb = document.createElement("div");
@@ -108,9 +103,17 @@ function renderCard(video, author) {
   text.className = "card-text";
   const title = document.createElement("h3");
   title.className = "card-title";
-  title.textContent = video.title;
-  const channel = document.createElement("p");
+  const titleLink = document.createElement("a");
+  titleLink.className = "card-link";
+  titleLink.href = `#/watch/${video.id}`;
+  titleLink.textContent = video.title;
+  titleLink.addEventListener("click", () => {
+    rememberVideo(video.id);
+  });
+  title.append(titleLink);
+  const channel = document.createElement("a");
   channel.className = "card-channel";
+  channel.href = `#/channel/${video.user_id}`;
   channel.textContent = author;
   const meta = document.createElement("p");
   meta.className = "card-meta";
@@ -119,10 +122,14 @@ function renderCard(video, author) {
     ? `${formatViews(video.views_count)} • ${published}`
     : formatViews(video.views_count);
 
+  const avatarLink = document.createElement("a");
+  avatarLink.className = "avatar-link";
+  avatarLink.href = `#/channel/${video.user_id}`;
+  avatarLink.append(avatar);
   text.append(title, channel, meta);
-  body.append(avatar, text);
-  link.append(thumb, body);
-  card.append(link);
+  body.append(avatarLink, text);
+  media.append(thumb);
+  card.append(media, body);
   return card;
 }
 
@@ -140,9 +147,7 @@ export function bindFeed() {
   const chips = document.querySelector("#chips");
   const grid = document.querySelector("#video-grid");
   const status = document.querySelector("#feed-status");
-  const form = document.querySelector("#search-form");
-  const input = document.querySelector("#search-input");
-  const state = { category: "all", query: "" };
+  const state = { category: "all" };
 
   function paintChips() {
     chips.replaceChildren();
@@ -168,11 +173,11 @@ export function bindFeed() {
     status.textContent = "Загрузка…";
     renderSkeletons(grid);
     try {
-      const videos = await fetchVideos(state.category, state.query);
+      const videos = await fetchVideos(state.category, "");
       const authors = await Promise.all(videos.map((video) => channelName(video.user_id)));
       grid.replaceChildren();
       videos.forEach((video, index) => {
-        grid.append(renderCard(video, authors[index]));
+        grid.append(renderVideoCard(video, authors[index]));
       });
       status.textContent = videos.length ? formatResultCount(videos.length) : "Ничего не найдено";
     } catch (error) {
@@ -187,21 +192,11 @@ export function bindFeed() {
     }
   }
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    state.query = input.value.trim();
-    if (location.hash.startsWith("#/watch/")) {
-      location.hash = "#/";
-    }
-    load();
-  });
-
   const watchRoute = location.hash.match(/^#\/watch\/([0-9a-f-]{36})$/i);
   if (watchRoute) {
     rememberVideo(watchRoute[1]);
   }
 
   paintChips();
-  load();
   return { reload: load };
 }
