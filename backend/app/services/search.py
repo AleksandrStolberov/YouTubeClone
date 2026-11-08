@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Reaction, Video
 from app.schemas.search import PaginatedSearchResult, TrendingTag, VideoSearchParams
 from app.schemas.video import VideoRead
+from app.services.video import public_video_filters
 
 
 def _like_pattern(value: str) -> str:
@@ -38,7 +39,7 @@ def _uploaded_since(upload_date: str | None, now: datetime) -> datetime | None:
 
 
 def _filters(params: VideoSearchParams, now: datetime) -> list:
-    filters: list = [Video.is_private.is_(False)]
+    filters: list = list(public_video_filters())
     if params.query:
         pattern = _like_pattern(params.query)
         filters.append(
@@ -75,8 +76,9 @@ async def search_public_videos(
 ) -> PaginatedSearchResult:
     """Search public videos by title and description, then filter and sort.
 
-    Private videos are excluded. Text search is a case-insensitive substring
-    match. A tag matches when any element of ``tags`` equals it, ignoring case.
+    Private and banned videos are excluded. Text search is a case-insensitive
+    substring match. A tag matches when any element of ``tags`` equals it,
+    ignoring case.
     """
     filters = _filters(params, datetime.now(timezone.utc))
     total = await session.scalar(select(func.count()).select_from(Video).where(*filters))
@@ -99,7 +101,7 @@ async def list_trending_tags(session: AsyncSession, *, limit: int) -> list[Trend
     """Return tags used by public videos, most common first.
 
     A tag's count is the number of public videos that include it. Tags that
-    appear only on private videos are left out.
+    appear only on private or banned videos are left out.
     """
     rows = await session.execute(
         text(
@@ -108,6 +110,7 @@ async def list_trending_tags(session: AsyncSession, *, limit: int) -> list[Trend
             FROM videos
             CROSS JOIN LATERAL unnest(videos.tags) AS tag
             WHERE videos.is_private IS FALSE
+              AND videos.is_banned IS FALSE
               AND tag <> ''
             GROUP BY tag
             ORDER BY video_count DESC, tag ASC

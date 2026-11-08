@@ -13,6 +13,13 @@ from app.schemas.interaction import (
     SubscriptionStatus,
     VideoReactionsSummary,
 )
+from app.schemas.moderation import (
+    AllowedUserRead,
+    ReportCreate,
+    ReportRead,
+    VideoBanRequest,
+    WhitelistAddRequest,
+)
 from app.schemas.playlist import (
     PlaylistCreate,
     PlaylistDetailRead,
@@ -33,6 +40,7 @@ from app.schemas.user import (
 from app.schemas.video import VideoCreate, VideoRead, VideoUpdate
 
 __all__ = [
+    "AllowedUserRead",
     "ChannelProfileRead",
     "CommentCreate",
     "CommentRead",
@@ -45,6 +53,8 @@ __all__ = [
     "PaginatedHistoryResponse",
     "PaginatedSearchResult",
     "ReactionCreate",
+    "ReportCreate",
+    "ReportRead",
     "SubscribersCount",
     "SubscriptionStatus",
     "Token",
@@ -55,6 +65,7 @@ __all__ = [
     "UserCreate",
     "UserLogin",
     "UserRead",
+    "VideoBanRequest",
     "VideoCreate",
     "VideoReactionsSummary",
     "VideoSearchParams",
@@ -62,4 +73,5 @@ __all__ = [
     "VideoUpdate",
     "ViewRecordRequest",
     "WatchHistoryItemRead",
+    "WhitelistAddRequest",
 ]

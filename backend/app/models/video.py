@@ -9,12 +9,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.access import VideoAllowedUser
     from app.models.comment import Comment
     from app.models.history import WatchHistory
     from app.models.playlist import PlaylistVideo
     from app.models.reaction import Reaction
+    from app.models.report import VideoReport
     from app.models.user import User
-    from app.models.video_access import VideoAccess
 
 
 class Video(Base):
@@ -49,6 +50,14 @@ class Video(Base):
         default=False,
         server_default=text("false"),
     )
+    is_banned: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=text("false"),
+        index=True,
+    )
+    ban_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     category: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     tags: Mapped[list[str]] = mapped_column(
         ARRAY(String(50)),
@@ -81,7 +90,13 @@ class Video(Base):
         passive_deletes=True,
         lazy="raise",
     )
-    access_entries: Mapped[list["VideoAccess"]] = relationship(
+    access_entries: Mapped[list["VideoAllowedUser"]] = relationship(
+        back_populates="video",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    reports: Mapped[list["VideoReport"]] = relationship(
         back_populates="video",
         cascade="all, delete-orphan",
         passive_deletes=True,

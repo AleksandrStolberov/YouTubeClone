@@ -18,7 +18,8 @@ async def search_videos(
     """Search public videos by title and description.
 
     Results can be narrowed by category, tag, and upload date, then sorted by
-    publication date, view count, or likes. Private videos are never returned.
+    publication date, view count, or likes. Private and banned videos are
+    never returned.
     """
     return await search_public_videos(session, params)
 

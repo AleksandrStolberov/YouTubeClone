@@ -9,7 +9,7 @@ from app.models import Subscription, User, Video, WatchHistory
 from app.schemas.feed import PaginatedFeedResponse
 from app.schemas.history import PaginatedHistoryResponse, WatchHistoryItemRead
 from app.schemas.video import VideoRead
-from app.services.video import get_video
+from app.services.video import get_video, public_video_filters
 
 
 class HistoryNotFoundError(Exception):
@@ -71,11 +71,11 @@ async def list_subscription_feed(
 ) -> PaginatedFeedResponse:
     """Return published videos from channels the user is subscribed to.
 
-    Published means public (``is_private`` is false). Newest videos come first.
+    Published means public and not banned. Newest videos come first.
     """
     filters = (
         Subscription.subscriber_id == user.id,
-        Video.is_private.is_(False),
+        *public_video_filters(),
     )
     matched = (
         select(Video)

@@ -21,6 +21,6 @@ async def subscription_feed(
 ) -> PaginatedFeedResponse:
     """List published videos from channels the current user follows.
 
-    Newest videos come first. Private videos are left out.
+    Newest videos come first. Private and banned videos are left out.
     """
     return await list_subscription_feed(session, current_user, limit=limit, offset=offset)

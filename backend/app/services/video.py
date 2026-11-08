@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.s3 import S3Storage, StorageError
-from app.models import User, UserRole, Video, VideoAccess
+from app.models import User, UserRole, Video, VideoAllowedUser
 from app.schemas.video import VideoCreate
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,15 @@ _THUMBNAIL_EXTENSIONS = {
     ".webp": "image/webp",
 }
 _STAFF_ROLES = {UserRole.MODERATOR.value, UserRole.ADMIN.value}
+
+
+def public_video_filters():
+    """Clauses for videos shown on public surfaces.
+
+    Private videos and videos hidden by moderation stay out of feeds,
+    search, and catalog lists.
+    """
+    return (Video.is_private.is_(False), Video.is_banned.is_(False))
 
 
 class VideoNotFoundError(Exception):
@@ -158,9 +167,10 @@ async def list_public_videos(
     limit: int,
     offset: int,
 ) -> list[Video]:
+    """List videos that are public and not banned, newest first."""
     stmt = (
         select(Video)
-        .where(Video.is_private.is_(False))
+        .where(*public_video_filters())
         .order_by(Video.created_at.desc(), Video.id.desc())
         .limit(limit)
         .offset(offset)
@@ -174,8 +184,14 @@ async def get_video(
     video_id: uuid.UUID,
     viewer: User | None,
 ) -> Video:
+    """Return a video the viewer is allowed to open.
+
+    A missing video, and a banned video for anyone except the author and
+    staff, raise ``VideoNotFoundError``. A private video the viewer cannot
+    open raises ``VideoForbiddenError``.
+    """
     video = await session.get(Video, video_id)
-    if video is None:
+    if video is None or (video.is_banned and not _bypasses_ban(viewer, video)):
         raise VideoNotFoundError
     if not await _can_view(session, video, viewer):
         raise VideoForbiddenError
@@ -259,6 +275,46 @@ def _can_manage(user: User, video: Video) -> bool:
     return user.id == video.user_id or _role_name(user) in _STAFF_ROLES
 
 
+def _bypasses_ban(viewer: User | None, video: Video) -> bool:
+    """Author, moderators, and admins can still open a banned video."""
+    return viewer is not None and _can_manage(viewer, video)
+
+
+async def visible_video_ids(
+    session: AsyncSession,
+    videos: list[Video],
+    viewer: User | None,
+) -> set[uuid.UUID]:
+    """Return ids of videos this viewer is allowed to see.
+
+    Banned videos stay visible to the author and to moderators or admins.
+    Private videos stay visible to the author, staff, and the whitelist.
+    """
+    allowed: set[uuid.UUID] = set()
+    hidden: list[uuid.UUID] = []
+    for video in videos:
+        if video.is_banned and not _bypasses_ban(viewer, video):
+            continue
+        if not video.is_private:
+            allowed.add(video.id)
+            continue
+        if viewer is not None and _can_manage(viewer, video):
+            allowed.add(video.id)
+            continue
+        if viewer is not None:
+            hidden.append(video.id)
+    if viewer is None or not hidden:
+        return allowed
+    granted = await session.scalars(
+        select(VideoAllowedUser.video_id).where(
+            VideoAllowedUser.user_id == viewer.id,
+            VideoAllowedUser.video_id.in_(hidden),
+        )
+    )
+    allowed.update(granted.all())
+    return allowed
+
+
 async def _can_view(session: AsyncSession, video: Video, viewer: User | None) -> bool:
     if not video.is_private:
         return True
@@ -267,9 +323,9 @@ async def _can_view(session: AsyncSession, video: Video, viewer: User | None) ->
     if _can_manage(viewer, video):
         return True
     result = await session.execute(
-        select(VideoAccess.id).where(
-            VideoAccess.video_id == video.id,
-            VideoAccess.user_id == viewer.id,
+        select(VideoAllowedUser.id).where(
+            VideoAllowedUser.video_id == video.id,
+            VideoAllowedUser.user_id == viewer.id,
         )
     )
     return result.scalar_one_or_none() is not None
