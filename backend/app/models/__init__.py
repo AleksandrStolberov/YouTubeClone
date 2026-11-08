@@ -1,5 +1,6 @@
 from app.models.base import Base
 from app.models.comment import Comment
+from app.models.history import WatchHistory
 from app.models.reaction import Reaction
 from app.models.subscription import Subscription
 from app.models.user import User, UserRole
@@ -15,4 +16,5 @@ __all__ = [
     "UserRole",
     "Video",
     "VideoAccess",
+    "WatchHistory",
 ]
