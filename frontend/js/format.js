@@ -69,6 +69,11 @@ export function formatDuration(seconds) {
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}` : clock;
 }
 
+export function formatSubscribers(count) {
+  const value = Number(count) || 0;
+  return `${value} ${plural(value, "подписчик", "подписчика", "подписчиков")}`;
+}
+
 export function formatResultCount(count) {
   return `${count} ${plural(count, "ролик", "ролика", "роликов")}`;
 }

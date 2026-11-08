@@ -16,7 +16,7 @@
       <button class="icon-button" id="menu-button" type="button" aria-label="Меню" aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
-      <a class="logo" href="/">
+      <a class="logo" href="#/">
         <svg class="logo-mark" viewBox="0 0 28 20" aria-hidden="true">
           <rect width="28" height="20" rx="5" fill="#ff0000"/>
           <path d="M11.5 5.5v9l8-4.5-8-4.5z" fill="#fff"/>
@@ -49,16 +49,83 @@
 
   <div class="shell">
     <aside class="sidebar" id="sidebar">
-      <a class="sidebar-link is-active" href="/">
+      <a class="sidebar-link is-active" href="#/">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>Главная</span>
       </a>
     </aside>
     <main class="content">
-      <nav class="chips" id="chips" aria-label="Категории"></nav>
-      <p class="feed-status" id="feed-status" role="status">Загрузка ленты…</p>
-      <section class="video-grid" id="video-grid" aria-live="polite" aria-label="Лента видео"></section>
+      <div id="home">
+        <nav class="chips" id="chips" aria-label="Категории"></nav>
+        <p class="feed-status" id="feed-status" role="status">Загрузка ленты…</p>
+        <section class="video-grid" id="video-grid" aria-live="polite" aria-label="Лента видео"></section>
+      </div>
+      <section id="watch" class="watch" hidden>
+        <div class="watch-layout">
+          <div class="watch-primary">
+            <div class="player">
+              <video id="player" controls autoplay playsinline preload="metadata"></video>
+            </div>
+            <h1 id="watch-title" class="watch-title"></h1>
+            <p id="watch-meta" class="watch-meta"></p>
+            <div class="watch-actions">
+              <div class="reactions" role="group" aria-label="Реакции">
+                <button id="like-button" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                  <span id="like-count">0</span>
+                </button>
+                <button id="dislike-button" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                  <span id="dislike-count">0</span>
+                </button>
+              </div>
+              <button id="report-button" class="text-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                Пожаловаться
+              </button>
+            </div>
+            <div class="channel-row">
+              <span class="avatar" id="channel-avatar" aria-hidden="true"></span>
+              <div class="channel-meta">
+                <strong id="channel-name"></strong>
+                <p id="channel-subs"></p>
+              </div>
+              <button id="subscribe-button" class="subscribe" type="button" hidden>Подписаться</button>
+            </div>
+            <p id="watch-description" class="description" hidden></p>
+            <section class="comments" aria-labelledby="comments-heading">
+              <h2 id="comments-heading">Комментарии</h2>
+              <form id="comment-form" class="comment-form" hidden>
+                <textarea id="comment-input" maxlength="1000" rows="2" placeholder="Введите комментарий"></textarea>
+                <button type="submit">Отправить</button>
+              </form>
+              <p id="comment-hint" class="comment-hint"></p>
+              <div id="comment-list"></div>
+            </section>
+          </div>
+          <aside id="recommendations" class="recommendations" aria-label="Рекомендации"></aside>
+        </div>
+        <p id="watch-status" class="watch-status" role="status"></p>
+      </section>
     </main>
+    <dialog id="report-dialog">
+      <form id="report-form">
+        <h2>Пожаловаться</h2>
+        <fieldset>
+          <legend>Причина</legend>
+          <label><input type="radio" name="reason" value="Спам" checked> Спам</label>
+          <label><input type="radio" name="reason" value="Неприемлемый контент"> Неприемлемый контент</label>
+          <label><input type="radio" name="reason" value="Вводит в заблуждение"> Вводит в заблуждение</label>
+          <label><input type="radio" name="reason" value="custom"> Другая причина</label>
+          <textarea id="report-custom" maxlength="500" rows="3" placeholder="Опишите причину"></textarea>
+        </fieldset>
+        <p id="report-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button id="report-cancel" type="button">Отмена</button>
+          <button type="submit">Отправить</button>
+        </div>
+      </form>
+    </dialog>
   </div>
   <script type="module" src="/app.js"></script>
 </body>

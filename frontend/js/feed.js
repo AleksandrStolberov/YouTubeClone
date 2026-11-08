@@ -190,6 +190,9 @@ export function bindFeed() {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     state.query = input.value.trim();
+    if (location.hash.startsWith("#/watch/")) {
+      location.hash = "#/";
+    }
     load();
   });
 

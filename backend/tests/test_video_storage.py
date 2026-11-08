@@ -8,7 +8,9 @@ from app.core.config import Settings
 from app.core.s3 import S3Storage, normalize_minio_endpoint
 from app.schemas.video import VideoCreate, VideoUpdate
 from app.services.video import (
+    ByteRangeError,
     VideoValidationError,
+    parse_byte_range,
     resolve_thumbnail_type,
     resolve_video_type,
 )
@@ -191,6 +193,16 @@ def test_video_create_strips_title_and_blank_description() -> None:
 def test_video_create_rejects_empty_title() -> None:
     with pytest.raises(ValidationError):
         VideoCreate(title="   ", description=None)
+
+
+def test_parse_byte_range_covers_open_suffix_and_rejects() -> None:
+    assert parse_byte_range(None, 100) == (0, 99)
+    assert parse_byte_range("bytes=0-9", 100) == (0, 9)
+    assert parse_byte_range("bytes=40-", 100) == (40, 99)
+    assert parse_byte_range("bytes=-10", 100) == (90, 99)
+    assert parse_byte_range(None, 0) == (0, -1)
+    with pytest.raises(ByteRangeError):
+        parse_byte_range("bytes=100-120", 100)
 
 
 def test_video_update_allows_partial_payload() -> None:

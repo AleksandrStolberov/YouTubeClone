@@ -23,7 +23,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   color: inherit;
 }
@@ -409,6 +410,305 @@ svg {
 
   body.sidebar-open .sidebar {
     display: block;
+  }
+}
+
+body[data-route="watch"] .sidebar {
+  display: none;
+}
+
+.watch-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 402px;
+  gap: 24px;
+  align-items: start;
+}
+
+.player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+}
+
+.player video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #000;
+  object-fit: contain;
+}
+
+.watch-title {
+  margin: 12px 0 4px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.watch-meta,
+.channel-meta p,
+.recommend-meta,
+.comment-hint,
+.watch-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.watch-status:empty,
+.comment-hint:empty,
+.form-error:empty {
+  display: none;
+}
+
+.watch-actions,
+.channel-row,
+.reactions,
+.text-button,
+.comment-form,
+.dialog-actions {
+  display: flex;
+  align-items: center;
+}
+
+.watch-actions {
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.reactions {
+  overflow: hidden;
+  border-radius: 999px;
+  background: #272727;
+}
+
+.reactions button,
+.text-button,
+.subscribe,
+.comment-form button,
+.dialog-actions button {
+  border: 0;
+  cursor: pointer;
+}
+
+.reactions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  background: transparent;
+}
+
+.reactions button + button {
+  border-left: 1px solid #3f3f3f;
+}
+
+.reactions button.is-active {
+  background: var(--text);
+  color: #0f0f0f;
+}
+
+.reactions svg,
+.text-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.text-button {
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #272727;
+}
+
+.channel-row {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.channel-meta strong {
+  display: block;
+}
+
+.subscribe {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #0f0f0f;
+  font-weight: 500;
+}
+
+.subscribe.is-subscribed {
+  background: #272727;
+  color: var(--text);
+}
+
+.description {
+  margin: 16px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: #272727;
+  white-space: pre-wrap;
+}
+
+.comments {
+  margin-top: 24px;
+}
+
+.comments h2,
+.recommendations h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.comment-form {
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.comment-form[hidden],
+.subscribe[hidden],
+.description[hidden] {
+  display: none;
+}
+
+.comment-form textarea,
+#report-custom,
+dialog textarea {
+  width: 100%;
+  resize: vertical;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 8px 0;
+  outline: none;
+}
+
+.comment-form button,
+.dialog-actions button {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  background: #3ea6ff;
+  color: #0f0f0f;
+  font-weight: 500;
+}
+
+.comment {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.comment-head {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.comment-head span,
+.comment-text {
+  color: var(--muted);
+}
+
+.comment-text {
+  margin: 0;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.link-button {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.recommendations {
+  display: grid;
+  gap: 8px;
+}
+
+.recommend {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.recommend .thumb {
+  border-radius: 8px;
+}
+
+.recommend-title {
+  margin: 0 0 4px;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+dialog {
+  width: min(440px, calc(100% - 32px));
+  padding: 20px;
+  border: 0;
+  border-radius: 12px;
+  background: #212121;
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+dialog h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+dialog fieldset {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+dialog label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-error {
+  min-height: 1.2em;
+  margin: 8px 0 0;
+  color: #ff8a80;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.watch-status {
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .watch-layout {
+    grid-template-columns: 1fr;
   }
 }
 
