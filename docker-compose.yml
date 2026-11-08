@@ -51,6 +51,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-videos}
+      MINIO_THUMBNAILS_BUCKET: ${MINIO_THUMBNAILS_BUCKET:-thumbnails}
       MINIO_SECURE: ${MINIO_SECURE:-false}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
       ALGORITHM: ${ALGORITHM:-HS256}

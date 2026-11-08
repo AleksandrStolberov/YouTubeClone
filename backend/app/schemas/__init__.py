@@ -7,6 +7,7 @@ from app.schemas.user import (
     UserLogin,
     UserRead,
 )
+from app.schemas.video import VideoCreate, VideoRead, VideoUpdate
 
 __all__ = [
     "Token",
@@ -16,4 +17,7 @@ __all__ = [
     "UserCreate",
     "UserLogin",
     "UserRead",
+    "VideoCreate",
+    "VideoRead",
+    "VideoUpdate",
 ]

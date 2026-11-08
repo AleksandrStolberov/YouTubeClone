@@ -11,6 +11,7 @@ from app.models import User, UserRole
 from app.services.auth import get_user_by_id
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def unauthorized() -> HTTPException:
@@ -40,6 +41,16 @@ async def get_current_user(
     if user is None:
         raise unauthorized()
     return user
+
+
+async def get_optional_user(
+    token: Annotated[str | None, Depends(oauth2_scheme_optional)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User | None:
+    """Return the user when a bearer token is sent, otherwise anonymous access."""
+    if token is None:
+        return None
+    return await get_current_user(token, session)
 
 
 class RoleChecker:
