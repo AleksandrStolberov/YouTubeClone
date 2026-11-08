@@ -12,6 +12,7 @@ from app.schemas.interaction import (
     SubscriptionStatus,
     VideoReactionsSummary,
 )
+from app.schemas.search import PaginatedSearchResult, TrendingTag, VideoSearchParams
 from app.schemas.user import (
     Token,
     TokenPayload,
@@ -28,6 +29,7 @@ __all__ = [
     "CommentRead",
     "PaginatedFeedResponse",
     "PaginatedHistoryResponse",
+    "PaginatedSearchResult",
     "ReactionCreate",
     "SubscribersCount",
     "SubscriptionStatus",
@@ -35,11 +37,13 @@ __all__ = [
     "TokenPayload",
     "TokenRefresh",
     "TokenType",
+    "TrendingTag",
     "UserCreate",
     "UserLogin",
     "UserRead",
     "VideoCreate",
     "VideoReactionsSummary",
+    "VideoSearchParams",
     "VideoRead",
     "VideoUpdate",
     "ViewRecordRequest",

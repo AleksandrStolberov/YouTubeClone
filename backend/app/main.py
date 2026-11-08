@@ -11,6 +11,7 @@ from app.api.v1.comments import router as comments_router
 from app.api.v1.feed import router as feed_router
 from app.api.v1.history import router as history_router
 from app.api.v1.reactions import router as reactions_router
+from app.api.v1.search import router as search_router
 from app.api.v1.subscriptions import router as subscriptions_router
 from app.api.v1.videos import router as videos_router
 from app.api.v1.views import router as views_router
@@ -30,6 +31,8 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.include_router(auth_router)
+# Before /videos/{video_id}, so /videos/search is not parsed as a video id.
+app.include_router(search_router)
 app.include_router(videos_router)
 app.include_router(views_router)
 app.include_router(comments_router)
