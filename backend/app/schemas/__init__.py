@@ -1,3 +1,4 @@
+from app.schemas.channel import ChannelProfileRead
 from app.schemas.feed import PaginatedFeedResponse
 from app.schemas.history import (
     PaginatedHistoryResponse,
@@ -12,6 +13,13 @@ from app.schemas.interaction import (
     SubscriptionStatus,
     VideoReactionsSummary,
 )
+from app.schemas.playlist import (
+    PlaylistCreate,
+    PlaylistDetailRead,
+    PlaylistRead,
+    PlaylistUpdate,
+    PlaylistVideoRead,
+)
 from app.schemas.search import PaginatedSearchResult, TrendingTag, VideoSearchParams
 from app.schemas.user import (
     Token,
@@ -25,9 +33,15 @@ from app.schemas.user import (
 from app.schemas.video import VideoCreate, VideoRead, VideoUpdate
 
 __all__ = [
+    "ChannelProfileRead",
     "CommentCreate",
     "CommentRead",
     "PaginatedFeedResponse",
+    "PlaylistCreate",
+    "PlaylistDetailRead",
+    "PlaylistRead",
+    "PlaylistUpdate",
+    "PlaylistVideoRead",
     "PaginatedHistoryResponse",
     "PaginatedSearchResult",
     "ReactionCreate",

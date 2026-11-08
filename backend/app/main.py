@@ -7,9 +7,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.channels import router as channels_router
 from app.api.v1.comments import router as comments_router
 from app.api.v1.feed import router as feed_router
 from app.api.v1.history import router as history_router
+from app.api.v1.playlists import router as playlists_router
 from app.api.v1.reactions import router as reactions_router
 from app.api.v1.search import router as search_router
 from app.api.v1.subscriptions import router as subscriptions_router
@@ -40,6 +42,8 @@ app.include_router(reactions_router)
 app.include_router(subscriptions_router)
 app.include_router(feed_router)
 app.include_router(history_router)
+app.include_router(playlists_router)
+app.include_router(channels_router)
 
 
 @app.exception_handler(RequestValidationError)
