@@ -1,10 +1,14 @@
 import asyncio
+import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.access import router as access_router
 from app.api.v1.auth import router as auth_router
@@ -23,6 +27,7 @@ from app.core.config import get_settings
 from app.core.s3 import get_s3_client
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -66,3 +71,39 @@ async def hide_password_in_validation(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+def _frontend_dir() -> Path | None:
+    """Locate the UI directory without hiding API routes.
+
+    Docker mounts the repo ``frontend/`` at ``/frontend``. A local run finds
+    the same folder next to the ``backend`` package.
+    """
+    candidates: list[Path] = []
+    configured = os.environ.get("FRONTEND_DIR", "").strip()
+    if configured:
+        candidates.append(Path(configured))
+    candidates.append(Path("/frontend"))
+    here = Path(__file__).resolve()
+    if len(here.parents) > 2:
+        candidates.append(here.parents[2] / "frontend")
+    if len(here.parents) > 1:
+        candidates.append(here.parents[1] / "frontend")
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if (resolved / "index.html").is_file():
+            return resolved
+    return None
+
+
+_frontend = _frontend_dir()
+if _frontend is None:
+    logger.warning("Frontend directory was not found; the UI will not be served")
+else:
+    # Registered last. Earlier routes (/auth, /videos, /docs, /health) win.
+    app.mount("/", StaticFiles(directory=_frontend, html=True), name="frontend")

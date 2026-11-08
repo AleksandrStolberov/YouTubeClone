@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Clone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="header">
+    <div class="header-start">
+      <button class="icon-button" id="menu-button" type="button" aria-label="Меню" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+      </button>
+      <a class="logo" href="/">
+        <svg class="logo-mark" viewBox="0 0 28 20" aria-hidden="true">
+          <rect width="28" height="20" rx="5" fill="#ff0000"/>
+          <path d="M11.5 5.5v9l8-4.5-8-4.5z" fill="#fff"/>
+        </svg>
+        <span class="logo-text">YouTube</span>
+        <span class="logo-clone">Clone</span>
+      </a>
+    </div>
+
+    <form class="search" id="search-form" role="search">
+      <input id="search-input" type="search" name="q" placeholder="Поиск" autocomplete="off" aria-label="Поиск">
+      <button type="submit">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <span>Поиск</span>
+      </button>
+    </form>
+
+    <div class="header-end">
+      <div class="demo-users" id="demo-users" role="group" aria-label="Демо-пользователи"></div>
+      <div class="account" id="account-badge">
+        <span class="avatar" id="account-avatar" aria-hidden="true">Г</span>
+        <span class="account-meta">
+          <strong id="account-name">Гость</strong>
+          <span id="account-role">без входа</span>
+        </span>
+      </div>
+    </div>
+  </header>
+  <p class="auth-status" id="auth-status" role="status"></p>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="sidebar-link is-active" href="/">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Главная</span>
+      </a>
+    </aside>
+    <main class="content">
+      <nav class="chips" id="chips" aria-label="Категории"></nav>
+      <p class="feed-status" id="feed-status" role="status">Загрузка ленты…</p>
+      <section class="video-grid" id="video-grid" aria-live="polite" aria-label="Лента видео"></section>
+    </main>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
