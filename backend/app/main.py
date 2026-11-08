@@ -7,6 +7,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.comments import router as comments_router
+from app.api.v1.reactions import router as reactions_router
+from app.api.v1.subscriptions import router as subscriptions_router
 from app.api.v1.videos import router as videos_router
 from app.core.config import get_settings
 from app.core.s3 import get_s3_client
@@ -25,6 +28,9 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(videos_router)
+app.include_router(comments_router)
+app.include_router(reactions_router)
+app.include_router(subscriptions_router)
 
 
 @app.exception_handler(RequestValidationError)
