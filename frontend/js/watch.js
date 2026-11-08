@@ -32,7 +32,6 @@ async function settle(promise, fallback) {
 }
 
 export function bindWatch() {
-  const home = document.querySelector("#home");
   const screen = document.querySelector("#watch");
   const player = document.querySelector("#player");
   const likeButton = document.querySelector("#like-button");
@@ -88,7 +87,11 @@ export function bindWatch() {
 
   function paintChannel(channel, subscription, user) {
     const name = channel.username || "Канал";
-    document.querySelector("#channel-name").textContent = name;
+    const href = activeVideo ? `#/channel/${activeVideo.user_id}` : "#/";
+    const nameLink = document.querySelector("#channel-name");
+    nameLink.textContent = name;
+    nameLink.href = href;
+    document.querySelector("#channel-link").href = href;
     const avatar = document.querySelector("#channel-avatar");
     avatar.textContent = name.slice(0, 1).toUpperCase();
     avatar.style.background = avatarColor(name);
@@ -237,14 +240,12 @@ export function bindWatch() {
     player.load();
   }
 
-  function showHome() {
+  function close() {
     ticket += 1;
     activeId = "";
     activeVideo = null;
     closePlayer();
     screen.hidden = true;
-    home.hidden = false;
-    document.body.dataset.route = "home";
     document.title = "YouTube Clone";
   }
 
@@ -253,7 +254,6 @@ export function bindWatch() {
     activeId = videoId;
     activeVideo = null;
     localStorage.setItem(SELECTED_VIDEO_KEY, videoId);
-    home.hidden = true;
     screen.hidden = false;
     document.body.dataset.route = "watch";
     setStatus("Загрузка…");
@@ -456,5 +456,5 @@ export function bindWatch() {
     }
   }
 
-  return { open, showHome };
+  return { open, close };
 }

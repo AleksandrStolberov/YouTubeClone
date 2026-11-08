@@ -26,6 +26,51 @@ def _normalize_description(value: object) -> object:
 
 Title = Annotated[str, BeforeValidator(_strip), Field(min_length=1, max_length=200)]
 Description = Annotated[str | None, BeforeValidator(_normalize_description)]
+_CATEGORIES = {"Tech", "Gaming", "Music", "Education"}
+
+
+def _normalize_category(value: object) -> object:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if stripped not in _CATEGORIES:
+        raise ValueError("Category must be Tech, Gaming, Music, or Education")
+    return stripped
+
+
+def _normalize_tags(value: object) -> object:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [part.strip() for part in value.split(",")]
+    if not isinstance(value, list):
+        return value
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        if not isinstance(item, str):
+            return value
+        tag = item.strip()
+        if not tag:
+            continue
+        if len(tag) > 50:
+            raise ValueError("Tag must be at most 50 characters")
+        key = tag.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(tag)
+    if len(cleaned) > 20:
+        raise ValueError("At most 20 tags are allowed")
+    return cleaned
+
+
+Category = Annotated[str | None, BeforeValidator(_normalize_category)]
+Tags = Annotated[list[str], BeforeValidator(_normalize_tags)]
 
 
 class VideoCreate(BaseModel):
@@ -36,6 +81,8 @@ class VideoCreate(BaseModel):
     title: Title
     description: Description = None
     is_private: bool = False
+    category: Category = None
+    tags: Tags = Field(default_factory=list)
 
 
 class VideoUpdate(BaseModel):

@@ -158,6 +158,8 @@ async def create_video(
             s3_key=video_key,
             preview_s3_key=preview_key,
             is_private=data.is_private,
+            category=data.category,
+            tags=list(data.tags),
             user_id=author.id,
         )
         session.add(video)
@@ -169,6 +171,25 @@ async def create_video(
 
     await session.refresh(video)
     return video
+
+
+async def list_channel_videos(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    limit: int,
+    offset: int,
+) -> list[Video]:
+    """List one author's public videos that are not banned, newest first."""
+    stmt = (
+        select(Video)
+        .where(Video.user_id == user_id, *public_video_filters())
+        .order_by(Video.created_at.desc(), Video.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
 
 
 async def list_public_videos(

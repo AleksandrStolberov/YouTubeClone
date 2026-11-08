@@ -1,11 +1,22 @@
 import { bindAuth } from "./js/auth.js";
+import { bindChannel } from "./js/channel.js";
 import { bindFeed } from "./js/feed.js";
+import { bindModeration } from "./js/moderation.js";
 import { bindRouter } from "./js/router.js";
+import { bindSearch } from "./js/search.js";
+import { bindUpload } from "./js/upload.js";
 import { bindWatch } from "./js/watch.js";
 
-bindFeed();
+const feed = bindFeed();
 bindAuth();
-bindRouter(bindWatch());
+bindRouter({
+  feed,
+  watch: bindWatch(),
+  channel: bindChannel(),
+  moderation: bindModeration(),
+  search: bindSearch(),
+  upload: bindUpload(),
+});
 
 const menuButton = document.querySelector("#menu-button");
 menuButton.addEventListener("click", () => {

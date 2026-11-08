@@ -59,6 +59,9 @@ function paintAccount(user) {
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
+  const staff = Boolean(user && (user.role === "admin" || user.role === "moderator"));
+  document.querySelector("#moderation-link").hidden = !staff;
+  document.querySelector("#login-button").hidden = Boolean(user);
 }
 
 function setBusy(busy) {
@@ -85,6 +88,7 @@ async function signIn(account) {
     localStorage.setItem(USER_KEY, JSON.stringify(me));
     publish(me);
     setStatus("");
+    return me;
   } catch (error) {
     clearSession();
     publish(null);
@@ -94,6 +98,7 @@ async function signIn(account) {
         ? "Неверный логин или пароль"
         : error.message;
     setStatus(known || "Не удалось войти");
+    throw error;
   } finally {
     setBusy(false);
   }
@@ -114,7 +119,7 @@ export function bindAuth() {
     button.dataset.username = account.username;
     button.textContent = account.label;
     button.addEventListener("click", () => {
-      signIn(account);
+      signIn(account).catch(() => {});
     });
     root.append(button);
   }
@@ -126,6 +131,64 @@ export function bindAuth() {
   guest.textContent = "Гость";
   guest.addEventListener("click", signOut);
   root.append(guest);
+
+  const dialog = document.querySelector("#auth-dialog");
+  const loginForm = document.querySelector("#login-form");
+  const registerForm = document.querySelector("#register-form");
+  const loginError = document.querySelector("#login-error");
+  const registerError = document.querySelector("#register-error");
+
+  function openDialog() {
+    loginError.textContent = "";
+    registerError.textContent = "";
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  }
+
+  document.querySelector("#login-button").addEventListener("click", openDialog);
+  document.addEventListener("auth:open", openDialog);
+  document.querySelector("#login-cancel").addEventListener("click", () => {
+    dialog.close();
+  });
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    loginError.textContent = "";
+    const username = document.querySelector("#login-username").value.trim();
+    const password = document.querySelector("#login-password").value;
+    try {
+      await signIn({ username, password, label: username });
+      loginForm.reset();
+      dialog.close();
+    } catch (error) {
+      loginError.textContent = error.status === 401
+        ? "Неверный логин или пароль"
+        : (error.message || "Не удалось войти");
+    }
+  });
+
+  registerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    registerError.textContent = "";
+    const email = document.querySelector("#register-email").value.trim();
+    const username = document.querySelector("#register-username").value.trim();
+    const password = document.querySelector("#register-password").value;
+    try {
+      await request("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, username, password }),
+      });
+      await signIn({ username, password, label: username });
+      registerForm.reset();
+      dialog.close();
+    } catch (error) {
+      registerError.textContent = error.status === 409
+        ? "Такой пользователь уже существует"
+        : (error.message || "Не удалось зарегистрироваться");
+    }
+  });
 
   paintAccount(readUser());
   restoreSession();
