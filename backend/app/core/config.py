@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "videos"
+    minio_thumbnails_bucket: str = "thumbnails"
     minio_secure: bool = False
 
     secret_key: str = "dev-secret-change-me"
