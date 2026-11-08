@@ -10,13 +10,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.access import VideoAllowedUser
     from app.models.comment import Comment
     from app.models.history import WatchHistory
     from app.models.playlist import Playlist
     from app.models.reaction import Reaction
+    from app.models.report import VideoReport
     from app.models.subscription import Subscription
     from app.models.video import Video
-    from app.models.video_access import VideoAccess
 
 
 class UserRole(str, enum.Enum):
@@ -82,9 +83,22 @@ class User(Base):
         passive_deletes=True,
         lazy="raise",
     )
-    video_accesses: Mapped[list["VideoAccess"]] = relationship(
+    video_accesses: Mapped[list["VideoAllowedUser"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    filed_reports: Mapped[list["VideoReport"]] = relationship(
+        back_populates="reporter",
+        foreign_keys="VideoReport.reporter_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    resolved_reports: Mapped[list["VideoReport"]] = relationship(
+        back_populates="resolver",
+        foreign_keys="VideoReport.resolved_by",
         passive_deletes=True,
         lazy="raise",
     )

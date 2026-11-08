@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Playlist, PlaylistVideo, User, UserRole, Video, VideoAccess
+from app.models import Playlist, PlaylistVideo, User, UserRole, Video
 from app.schemas.playlist import (
     PlaylistCreate,
     PlaylistDetailRead,
@@ -14,9 +14,7 @@ from app.schemas.playlist import (
     PlaylistVideoRead,
 )
 from app.schemas.video import VideoRead
-from app.services.video import get_video
-
-_VIDEO_STAFF_ROLES = {UserRole.MODERATOR.value, UserRole.ADMIN.value}
+from app.services.video import get_video, visible_video_ids
 
 
 class PlaylistNotFoundError(Exception):
@@ -64,14 +62,15 @@ async def get_playlist_detail(
 ) -> PlaylistDetailRead:
     """Return a playlist and the videos this viewer is allowed to see.
 
-    A private playlist is visible only to its author. Private videos inside a
-    public playlist stay hidden from viewers who cannot open those videos.
-    ``videos_count`` is the number of membership rows, before that filter.
+    A private playlist is visible only to its author. Private videos and
+    banned videos inside a playlist stay hidden from viewers who cannot open
+    those videos. ``videos_count`` is the number of membership rows, before
+    that filter.
     """
     playlist = await _get_playlist(session, playlist_id)
     _ensure_can_view(playlist, viewer)
     pairs = await _load_items(session, playlist.id)
-    visible = await _accessible_video_ids(session, [video for _, video in pairs], viewer)
+    visible = await visible_video_ids(session, [video for _, video in pairs], viewer)
     videos = [
         _video_item(video, link.position)
         for link, video in pairs
@@ -277,34 +276,6 @@ async def _videos_count(session: AsyncSession, playlist_id: uuid.UUID) -> int:
     return int(total or 0)
 
 
-async def _accessible_video_ids(
-    session: AsyncSession,
-    videos: list[Video],
-    viewer: User | None,
-) -> set[uuid.UUID]:
-    allowed: set[uuid.UUID] = set()
-    hidden: list[uuid.UUID] = []
-    for video in videos:
-        if not video.is_private:
-            allowed.add(video.id)
-            continue
-        if viewer is not None and _can_view_private_video(viewer, video):
-            allowed.add(video.id)
-            continue
-        if viewer is not None:
-            hidden.append(video.id)
-    if viewer is None or not hidden:
-        return allowed
-    granted = await session.scalars(
-        select(VideoAccess.video_id).where(
-            VideoAccess.user_id == viewer.id,
-            VideoAccess.video_id.in_(hidden),
-        )
-    )
-    allowed.update(granted.all())
-    return allowed
-
-
 def _ensure_can_view(playlist: Playlist, viewer: User | None) -> None:
     if playlist.is_private and (viewer is None or viewer.id != playlist.user_id):
         raise PlaylistForbiddenError
@@ -313,12 +284,6 @@ def _ensure_can_view(playlist: Playlist, viewer: User | None) -> None:
 def _ensure_owner(playlist: Playlist, actor: User) -> None:
     if playlist.user_id != actor.id:
         raise PlaylistForbiddenError
-
-
-def _can_view_private_video(viewer: User, video: Video) -> bool:
-    if video.user_id == viewer.id:
-        return True
-    return _role_name(viewer) in _VIDEO_STAFF_ROLES
 
 
 def _is_admin(user: User) -> bool:

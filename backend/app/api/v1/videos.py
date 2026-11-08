@@ -98,7 +98,7 @@ async def list_videos(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Video]:
-    """List public videos, newest first."""
+    """List public videos that are not banned, newest first."""
     return await list_public_videos(session, limit=limit, offset=offset)
 
 
@@ -111,7 +111,8 @@ async def read_video(
     """Return metadata for one video.
 
     Public videos are visible without a token. Private videos are visible to
-    the author, a moderator, an admin, or a user granted access.
+    the author, a moderator, an admin, or a user on the whitelist. Banned
+    videos are hidden from everyone except the author and staff.
     """
     try:
         return await get_video(session, video_id, viewer)

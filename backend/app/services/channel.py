@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Subscription, User, Video
 from app.schemas.channel import ChannelProfileRead
+from app.services.video import public_video_filters
 
 
 class ChannelNotFoundError(Exception):
@@ -17,8 +18,8 @@ async def get_channel_profile(
 ) -> ChannelProfileRead:
     """Return public channel counters.
 
-    Views are summed for public videos only. The video total includes private
-    uploads, because it is the size of the author's catalog.
+    Views are summed for public videos that are not banned. The video total
+    includes private uploads, because it is the size of the author's catalog.
     """
     user = await session.get(User, user_id)
     if user is None:
@@ -32,7 +33,7 @@ async def get_channel_profile(
     )
     total_views = (
         select(func.coalesce(func.sum(Video.views_count), 0))
-        .where(Video.user_id == user_id, Video.is_private.is_(False))
+        .where(Video.user_id == user_id, *public_video_filters())
         .scalar_subquery()
     )
     videos_count = (
