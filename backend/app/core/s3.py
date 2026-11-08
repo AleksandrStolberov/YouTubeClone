@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from pathlib import PurePosixPath
 from typing import BinaryIO
 
 from minio import Minio
@@ -11,6 +12,14 @@ from app.core.config import Settings, get_settings
 logger = logging.getLogger(__name__)
 
 _ALREADY_EXISTS = frozenset({"BucketAlreadyOwnedByYou", "BucketAlreadyExists"})
+_MEDIA_BY_EXTENSION = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+}
 
 
 class StorageError(Exception):
@@ -112,6 +121,21 @@ class S3Storage:
         )
         return str(url)
 
+    def read_object(self, bucket: str, key: str) -> tuple[bytes, str]:
+        """Read an object and return its bytes plus a content type."""
+        response = self._run(self.client.get_object, bucket, key)
+        try:
+            header = str(response.headers.get("Content-Type", ""))
+            try:
+                data = response.read()
+            except (MinioException, HTTPError, OSError, TimeoutError) as exc:
+                logger.exception("MinIO request failed")
+                raise StorageError("Object storage request failed") from exc
+        finally:
+            response.close()
+            response.release_conn()
+        return data, _media_type(header, key)
+
     def delete_object(self, bucket: str, key: str) -> None:
         self._run(self.client.remove_object, bucket, key)
 
@@ -138,6 +162,16 @@ class S3Storage:
 
 
 _storage: S3Storage | None = None
+
+
+def _media_type(header: str, key: str) -> str:
+    media_type = header.split(";", 1)[0].strip().lower()
+    if media_type in {"", "application/octet-stream", "binary/octet-stream"}:
+        return _MEDIA_BY_EXTENSION.get(
+            PurePosixPath(key).suffix.lower(),
+            "application/octet-stream",
+        )
+    return media_type
 
 
 def get_s3_client() -> S3Storage:

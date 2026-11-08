@@ -179,6 +179,30 @@ async def list_public_videos(
     return list(result.scalars().all())
 
 
+@dataclass(frozen=True)
+class StoredObject:
+    data: bytes
+    media_type: str
+
+
+async def load_thumbnail(
+    session: AsyncSession,
+    storage: S3Storage,
+    video_id: uuid.UUID,
+    viewer: User | None,
+) -> StoredObject:
+    """Read a cover image the viewer is allowed to see."""
+    video = await get_video(session, video_id, viewer)
+    if not video.preview_s3_key:
+        raise VideoNotFoundError
+    data, media_type = await asyncio.to_thread(
+        storage.read_object,
+        storage.thumbnail_bucket,
+        video.preview_s3_key,
+    )
+    return StoredObject(data=data, media_type=media_type)
+
+
 async def get_video(
     session: AsyncSession,
     video_id: uuid.UUID,

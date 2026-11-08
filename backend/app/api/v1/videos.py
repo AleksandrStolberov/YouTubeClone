@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import Response
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +22,7 @@ from app.services.video import (
     delete_video,
     get_video,
     list_public_videos,
+    load_thumbnail,
 )
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -100,6 +102,37 @@ async def list_videos(
 ) -> list[Video]:
     """List public videos that are not banned, newest first."""
     return await list_public_videos(session, limit=limit, offset=offset)
+
+
+@router.get("/{video_id}/thumbnail")
+async def read_video_thumbnail(
+    video_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    storage: Annotated[S3Storage, Depends(get_s3_client)],
+    viewer: Annotated[User | None, Depends(get_optional_user)],
+) -> Response:
+    """Stream the cover image stored in the thumbnails bucket."""
+    try:
+        cover = await load_thumbnail(session, storage, video_id, viewer)
+    except VideoNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found") from exc
+    except VideoForbiddenError as exc:
+        if viewer is None:
+            raise unauthorized() from exc
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        ) from exc
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Object storage is unavailable",
+        ) from exc
+    return Response(
+        content=cover.data,
+        media_type=cover.media_type,
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @router.get("/{video_id}", response_model=VideoRead)

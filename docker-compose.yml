@@ -57,6 +57,10 @@ services:
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      FRONTEND_DIR: /frontend
+    volumes:
+      - ./backend/app:/app/app
+      - ./frontend:/frontend:ro
     ports:
       - "8000:8000"
     # Entrypoint applies schema migrations before the API process starts.
