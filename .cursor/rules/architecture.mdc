@@ -1,0 +1,13 @@
+---
+description: Стек и границы YouTube Clone
+alwaysApply: true
+---
+
+# YouTube Clone
+
+- Стек: Python 3.11, FastAPI, PostgreSQL 16, SQLAlchemy 2.0 async + asyncpg, Alembic, MinIO, Docker Compose.
+- Слои: `app/api` вызывает `app/services`. Модели в `app/models`, схемы Pydantic v2 в `app/schemas`.
+- В PostgreSQL только метаданные. Байты видео и обложек — в бакетах MinIO `videos` и `thumbnails`.
+- Раздача видео принимает один заголовок `Range` и отвечает `206 Partial Content`.
+- Роли: `user`, `moderator`, `admin`. Приватное видео видят автор, персонал и белый список.
+- Схему меняй только новой ревизией Alembic. После шага предлагай сообщение Conventional Commits; коммит создавай, когда его просят.

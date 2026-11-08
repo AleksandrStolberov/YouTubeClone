@@ -37,7 +37,28 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  createbuckets:
+    image: youtube-clone-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-videos}
+      MINIO_THUMBNAILS_BUCKET: ${MINIO_THUMBNAILS_BUCKET:-thumbnails}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+    # Official minio/mc images are no longer pullable. The API client creates
+    # the same two buckets and leaves them in place when they already exist.
+    entrypoint: ["python", "-c", "from app.core.s3 import get_s3_client; get_s3_client().ensure_buckets(); print('buckets ready: videos, thumbnails')"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+
   backend:
+    image: youtube-clone-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -57,13 +78,14 @@ services:
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      SEED_ON_EMPTY: ${SEED_ON_EMPTY:-true}
       FRONTEND_DIR: /frontend
     volumes:
       - ./backend/app:/app/app
       - ./frontend:/frontend:ro
     ports:
       - "8000:8000"
-    # Entrypoint applies schema migrations before the API process starts.
+    # Entrypoint applies Alembic migrations and seeds an empty database.
     entrypoint: ["/app/docker-entrypoint.sh"]
     command:
       - uvicorn
@@ -77,6 +99,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      createbuckets:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -88,7 +112,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 90s
     restart: unless-stopped
 
 volumes:
