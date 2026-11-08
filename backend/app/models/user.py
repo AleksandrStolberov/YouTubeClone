@@ -11,6 +11,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
+    from app.models.history import WatchHistory
     from app.models.reaction import Reaction
     from app.models.subscription import Subscription
     from app.models.video import Video
@@ -96,6 +97,12 @@ class User(Base):
     subscriber_subscriptions: Mapped[list["Subscription"]] = relationship(
         back_populates="subscriber",
         foreign_keys="Subscription.subscriber_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    watch_history: Mapped[list["WatchHistory"]] = relationship(
+        back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="raise",

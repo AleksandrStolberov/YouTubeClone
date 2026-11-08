@@ -1,3 +1,9 @@
+from app.schemas.feed import PaginatedFeedResponse
+from app.schemas.history import (
+    PaginatedHistoryResponse,
+    ViewRecordRequest,
+    WatchHistoryItemRead,
+)
 from app.schemas.interaction import (
     CommentCreate,
     CommentRead,
@@ -20,6 +26,8 @@ from app.schemas.video import VideoCreate, VideoRead, VideoUpdate
 __all__ = [
     "CommentCreate",
     "CommentRead",
+    "PaginatedFeedResponse",
+    "PaginatedHistoryResponse",
     "ReactionCreate",
     "SubscribersCount",
     "SubscriptionStatus",
@@ -34,4 +42,6 @@ __all__ = [
     "VideoReactionsSummary",
     "VideoRead",
     "VideoUpdate",
+    "ViewRecordRequest",
+    "WatchHistoryItemRead",
 ]

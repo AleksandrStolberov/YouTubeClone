@@ -10,6 +10,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
+    from app.models.history import WatchHistory
     from app.models.reaction import Reaction
     from app.models.user import User
     from app.models.video_access import VideoAccess
@@ -72,6 +73,12 @@ class Video(Base):
         lazy="raise",
     )
     access_entries: Mapped[list["VideoAccess"]] = relationship(
+        back_populates="video",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    watch_history: Mapped[list["WatchHistory"]] = relationship(
         back_populates="video",
         cascade="all, delete-orphan",
         passive_deletes=True,
