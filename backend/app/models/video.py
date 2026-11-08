@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, func, text
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 class Video(Base):
     __tablename__ = "videos"
+    __table_args__ = (Index("ix_videos_tags", "tags", postgresql_using="gin"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -46,6 +47,13 @@ class Video(Base):
         nullable=False,
         default=False,
         server_default=text("false"),
+    )
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    tags: Mapped[list[str]] = mapped_column(
+        ARRAY(String(50)),
+        nullable=False,
+        default=list,
+        server_default=text("'{}'"),
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

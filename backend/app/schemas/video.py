@@ -61,5 +61,7 @@ class VideoRead(BaseModel):
     duration: int
     views_count: int
     is_private: bool
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
     user_id: uuid.UUID
     created_at: datetime
