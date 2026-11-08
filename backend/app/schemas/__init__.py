@@ -1,3 +1,11 @@
+from app.schemas.interaction import (
+    CommentCreate,
+    CommentRead,
+    ReactionCreate,
+    SubscribersCount,
+    SubscriptionStatus,
+    VideoReactionsSummary,
+)
 from app.schemas.user import (
     Token,
     TokenPayload,
@@ -10,6 +18,11 @@ from app.schemas.user import (
 from app.schemas.video import VideoCreate, VideoRead, VideoUpdate
 
 __all__ = [
+    "CommentCreate",
+    "CommentRead",
+    "ReactionCreate",
+    "SubscribersCount",
+    "SubscriptionStatus",
     "Token",
     "TokenPayload",
     "TokenRefresh",
@@ -18,6 +31,7 @@ __all__ = [
     "UserLogin",
     "UserRead",
     "VideoCreate",
+    "VideoReactionsSummary",
     "VideoRead",
     "VideoUpdate",
 ]
