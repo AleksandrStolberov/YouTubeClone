@@ -56,6 +56,12 @@ class User(Base):
         server_default=func.now(),
     )
 
+    def __repr__(self) -> str:
+        return (
+            f"User(id={self.id!r}, email={self.email!r}, "
+            f"username={self.username!r}, role={self.role!r})"
+        )
+
     videos: Mapped[list["Video"]] = relationship(
         back_populates="owner",
         cascade="all, delete-orphan",
